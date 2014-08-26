@@ -23,10 +23,10 @@ public class App
         System.out.println( "\n=========== Object To Xml String ============" );
         
         XStream xstream = new XStream();     
-     	//xml preset "person" instead of "com.hp.sylar.Person"
+     	//xml preset "person" instead of "com.hp.sylar.Person",  Field can alias too when use xstream.aliasField
         xstream.alias("person", Person.class);          
-        //age element will use default 0
-        //cellphone use null (not present) , and if change age from int to Integer,it also present 0;
+        //age element use default 0
+        //cellphone use null (not display) , and if change type of age from int to Integer,it won't display;
         //if don't initialize reference type all give them null , they won't display
         Person joe = new Person("Joe", "Walnes");
         joe.setPhone(new PhoneNumber(123, "1234-456"));
