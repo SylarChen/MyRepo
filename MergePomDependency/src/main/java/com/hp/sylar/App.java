@@ -1,9 +1,13 @@
 package com.hp.sylar;
 
+
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -11,7 +15,6 @@ import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.annotations.XStreamAlias;
 /**
  * Hello world!
  *
@@ -28,33 +31,9 @@ public class App
     	};
     	List<String> DM_List = getDependencyManagement(urls);
     	List<DependencyManagement> DM_Obj_List = getDependencyManagementObject(DM_List);
-    	for(DependencyManagement a : DM_Obj_List)
-    	{
-    		System.out.println(a);
-    	}
-    	
-//    	File file = new File("./resource/dependencies.xml");
-//    	char[] input = new char[(int) file.length()];
-//    	try {
-//			FileReader fr = new FileReader(file);
-//			fr.read(input);		
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-//    	
-//    	 XStream xstream = new XStream();  
-//
-//    	 xstream.processAnnotations(DependencyManagement.class);
-//    	 xstream.processAnnotations(Dependency.class);
-//    	 
-//    	 DependencyManagement xmlObject = (DependencyManagement) xstream.fromXML(new String(input));
-//    	 
-//    	 for(Dependency d : xmlObject.dependencies)
-//    	 {
-//    		 System.out.println(d.groupId + d.artifactId + d.version + "--------" + d.scope);
-//    	 }
-//    	 
-//    	 System.out.println( "=============================================" );
+    	DependencyManagement dependencyManagement= mergeDependencies(DM_Obj_List);
+    
+    	writeResult(dependencyManagement,"./result/merged.xml","./result/mergeLeft.xml");
     }
     
     
@@ -90,5 +69,74 @@ public class App
             list.add(dm_Object);
     	}
     	return list;
+    }
+    
+    private static DependencyManagement mergeDependencies(List<DependencyManagement> DM_Obj_List)
+    {	
+    	DependencyManagement merged_DM = new DependencyManagement();
+    	//do not merge dependency with classifier,type or exclusions
+    	//do not merge dependency with no version
+    	for(DependencyManagement dm : DM_Obj_List)
+    	{
+    		for(Dependency dependency : dm.dependencies)
+    		{
+    			if(dependency.version!=null && dependency.classifier==null && dependency.type==null && dependency.exclusions==null)
+    			{
+    				merged_DM.dependencies.add(dependency);
+    			}
+    			//can write to log
+    			else
+    			{
+    				DependencyManagement.notValidList.add(dependency);
+    				//System.out.println("log: "+dependency.groupId+"."+dependency.artifactId+"."+dependency.version+"."+dependency.scope);
+    			}
+    		}
+    	}
+    	System.out.println("\n");
+    	Set<Dependency> d_set = new HashSet<Dependency>(merged_DM.dependencies);
+    	merged_DM.dependencies = new ArrayList<Dependency>(d_set);
+    	return merged_DM;
+    }
+    
+    private static void writeResult(DependencyManagement dependencyManagement,String urlMerged,String urlLeft)
+    {	
+    	XStream xstream = new XStream();
+    	xstream.processAnnotations(DependencyManagement.class);
+    	xstream.processAnnotations(Dependency.class);
+    	
+    	List<Dependency> needToDeleteList = new ArrayList<Dependency>();
+    	for(Dependency d : DependencyManagement.notValidList)
+    	{
+    		needToDeleteList.add(d);
+    	}
+    	for(Dependency d : needToDeleteList)
+    	{
+    		dependencyManagement.dependencies.remove(d);
+    		//System.out.println("log: "+d.groupId+"."+d.artifactId+"."+d.version+"."+d.scope);
+    	}
+    		
+    	String result = xstream.toXML(dependencyManagement);
+    	File file = new File(urlMerged);
+    	try {
+			FileWriter fw = new FileWriter(file);
+			fw.write(result);
+			fw.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    	DependencyManagement left_dependencyManagement = new DependencyManagement();
+    	left_dependencyManagement.dependencies=needToDeleteList;
+    	result = xstream.toXML(left_dependencyManagement);
+    	file = new File(urlLeft);
+    	try {
+			FileWriter fw = new FileWriter(file);
+			fw.write(result);
+			fw.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 }

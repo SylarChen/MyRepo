@@ -21,6 +21,17 @@
 			<artifactId>asm</artifactId>
 			<version>3.1</version>
 		</dependency>
+				<dependency>
+			<groupId>asm</groupId>
+			<artifactId>asm</artifactId>
+			<version>3.1</version>
+		</dependency>
+		<dependency>
+			<groupId>abc</groupId>
+			<artifactId>ddd</artifactId>
+			<version>3.1</version>
+			<type>war</type>
+		</dependency>
 		<dependency>
 			<groupId>commons-collections</groupId>
 			<artifactId>commons-collections</artifactId>
@@ -30,13 +41,14 @@
 		<dependency>
 			<groupId>dom4j</groupId>
 			<artifactId>dom4j</artifactId>
-			<version>1.6.1</version>
+
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>antlr</groupId>
 			<artifactId>antlr</artifactId>
 			<version>2.7.6</version>
+			<type>jar</type>
 		</dependency>
 		<dependency>
 			<groupId>org.hibernate.javax.persistence</groupId>
