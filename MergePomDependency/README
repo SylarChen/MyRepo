@@ -1,0 +1,5 @@
+将几个pom文件的dependency进行合并。
+对 没有version, version冲突， scope冲突， 有type, 有classifier， 有exclusions 的dependency项不进行操作。
+合并结果在 mergedUrl 文件
+冲突结果在 notMergedUrl 文件
+原pom文件加入 <<dependencyManagement> ... </dependencyManagement>/> 的去version string
