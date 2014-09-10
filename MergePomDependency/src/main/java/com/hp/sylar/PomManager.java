@@ -17,15 +17,19 @@ import com.thoughtworks.xstream.XStream;
 
 public class PomManager {
 	
-	public static void start(String[] urls,String mergedUrl,String notMergedUrl)
+	public static void start(String[] urls,String mergedUrl,String leftUrl)
 	{
-		System.out.println("Read need to merged pom.xml....");
+		System.out.println("Read poms....");
     	List<DependencyManagement> DM_List = getDependencyManagement(urls);
     	
     	System.out.println("Start to merge pom....");
-    	DependencyManagement dependencyManagement= mergeDependencies(DM_List);
+    	DependencyManagement merged_DM = new DependencyManagement();
+    	DependencyManagement left_DM = new DependencyManagement();
+    	mergeDependencies(DM_List, merged_DM, left_DM);
     
-    	writeResult(dependencyManagement,mergedUrl,notMergedUrl);
+    	System.out.println("Start to write result....");
+    	writeBack(merged_DM,mergedUrl);
+    	writeBack(left_DM,leftUrl);
 	}
 	
 	private static List<DependencyManagement> getDependencyManagement(String[] urls)
@@ -51,9 +55,8 @@ public class PomManager {
     	return list;
     }
 	    
-	private static DependencyManagement mergeDependencies(List<DependencyManagement> DM_List)
+	private static void mergeDependencies(List<DependencyManagement> DM_List, DependencyManagement merged_DM, DependencyManagement left_DM)
     {	
-    	DependencyManagement merged_DM = new DependencyManagement();
     	//do not merge dependency with classifier,type or exclusions
     	//do not merge dependency with no version
     	for(DependencyManagement dm : DM_List)
@@ -71,43 +74,29 @@ public class PomManager {
     			}
     		}
     	}
+    	//first merge  , left some not valid dependency in merged_DM
     	Set<Dependency> d_set = new HashSet<Dependency>(merged_DM.dependencies);
     	merged_DM.dependencies = new ArrayList<Dependency>(d_set);
-    	return merged_DM;
+    	//remove those not valid
+    	for(Dependency d : DependencyManagement.notValidList)
+    	{
+    		left_DM.dependencies.add(d);
+    	}
+    	for(Dependency d : left_DM.dependencies)
+    	{
+    		merged_DM.dependencies.remove(d);
+    		//System.out.println("log: "+d.groupId+"."+d.artifactId+"."+d.version+"."+d.scope);
+    	}
     }
 
-	private static void writeResult(DependencyManagement dependencyManagement,String urlMerged,String urlLeft)
+	private static void writeBack(DependencyManagement dependencyManagement,String url)
     {	
     	XStream xstream = new XStream();
     	xstream.processAnnotations(DependencyManagement.class);
     	xstream.processAnnotations(Dependency.class);
-    	
-    	List<Dependency> needToDeleteList = new ArrayList<Dependency>();
-    	for(Dependency d : DependencyManagement.notValidList)
-    	{
-    		needToDeleteList.add(d);
-    	}
-    	for(Dependency d : needToDeleteList)
-    	{
-    		dependencyManagement.dependencies.remove(d);
-    		//System.out.println("log: "+d.groupId+"."+d.artifactId+"."+d.version+"."+d.scope);
-    	}
     		
     	String result = xstream.toXML(dependencyManagement);
-    	File file = new File(urlMerged);
-    	try {
-			FileWriter fw = new FileWriter(file);
-			fw.write(result);
-			fw.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	
-    	DependencyManagement left_dependencyManagement = new DependencyManagement();
-    	left_dependencyManagement.dependencies=needToDeleteList;
-    	result = xstream.toXML(left_dependencyManagement);
-    	file = new File(urlLeft);
+    	File file = new File(url);
     	try {
 			FileWriter fw = new FileWriter(file);
 			fw.write(result);
