@@ -30,6 +30,9 @@ public class PomManager {
     	System.out.println("Start to write result....");
     	writeBack(merged_DM,mergedUrl);
     	writeBack(left_DM,leftUrl);
+    	
+    	System.out.println("Start to clean version....");
+    	cleanVersion(urls, DM_List, left_DM);
 	}
 	
 	private static List<DependencyManagement> getDependencyManagement(String[] urls)
@@ -106,4 +109,66 @@ public class PomManager {
 			e.printStackTrace();
 		}
     }
+	
+	private static void cleanVersion(String[] urls ,List<DependencyManagement> DM_List, DependencyManagement left_DM)
+	{
+		//clean version
+		List<String> dm_string = new ArrayList<String>();	
+    	XStream xstream = new XStream();
+    	xstream.processAnnotations(DependencyManagement.class);
+    	xstream.processAnnotations(Dependency.class);
+		
+		for(DependencyManagement dm : DM_List)
+		{
+			for(Dependency d : dm.dependencies)
+			{
+				if(!left_DM.dependencies.contains(d))
+					d.version=null;
+			}
+			
+			dm_string.add(xstream.toXML(dm));
+		}
+		
+		int i=0;
+    	for(String url : urls)
+    	{
+        	SAXReader reader = new SAXReader();
+        	Document document = null;
+            try {
+    			document = reader.read(url);
+    		} catch (DocumentException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+            Element root = document.getRootElement();
+            root.addElement(dm_string.get(i++));
+            
+        	File file = new File(url);
+        	try {
+    			FileWriter fw = new FileWriter(file);
+    			fw.write(document.asXML());
+    			fw.close();
+    		} catch (IOException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
+    	}
+    	
+    	
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	}
 }
